@@ -1,9 +1,4 @@
-/**
- * Multithreaded work queue.
- * Copyright (c) 2012 Ronald Bennett Cemer
- * This software is licensed under the BSD license.
- * See the accompanying LICENSE.txt for details.
- */
+
 
 #include <stdio.h>
 #include <stdlib.h>

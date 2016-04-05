@@ -1,9 +1,4 @@
 /**
- * Multithreaded, libevent-based socket server.
- * Copyright (c) 2012 Ronald Bennett Cemer
- * This software is licensed under the BSD license.
- * See the accompanying LICENSE.txt for details.
- *
  * To compile: gcc -o echoserver_threaded echoserver_threaded.c workqueue.c -levent -lpthread
  * gcc -o RobotServer ApolloProtocol.c ApolloSqlOperator.c ApolloRedis.c ApolloUtil.c server.c workqueue.c curljson.c -levent -lpthread -lmysqlclient -lhiredis -lcurl  -I /usr/include/mysql/
  * To run: ./RobotServer
