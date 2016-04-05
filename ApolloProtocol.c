@@ -171,7 +171,7 @@ int phoneHeaderPacket(char *packet, int length, char *info) {
  * 43 00 00 00 07 02 00 00 00 00 00 00 23 45 43 32 //download blockdata
  * 43 00 00 00 07 41 01 00 86 18 87 41 87 42 90 43 //set family number
  * 43 00 00 00 07 42 01 00 86 18 87 56 87 42 90 43 //set contact number
- * 43 00 00 00 07 43 01 00 86 18 87 56 87 42 90 43 //set phone book
+ * 43 00 00 00 14 43 01 00 86 18 87 41 87 42 90 43 //set phone book
  * 43 00 00 00 07 44 01 00 86 18 87 41 87 42 90 43 //set location freq
  * 43 00 00 00 07 08 00 86 18 87 41 87 42 90 43 01//single cmd open 
  * 43 00 00 00 07 09 00 86 18 87 41 87 42 90 43 01//single cmd open 
