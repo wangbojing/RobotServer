@@ -105,7 +105,7 @@
 #define CMD_PHONE_DEVICE_SAFEZONEMUSIC_CLOSE		0x64
 
 #define CMD_PHONE_DEVICE_SOS_CLEAR					0x21
-
+#define CMD_PHONE_DEVICE_AGPS_DOWNLOAD				0x2B
 
 #define CMD_PHONE_BUZZER_DEVICE_OPEN	0x81
 #define CMD_PHONE_BUZZER_DEVICE_CLOSE	0x82
@@ -151,6 +151,24 @@ int (*phoneOperatorUserInfo_Proc)(struct bufferevent *bev, client_t *client, cha
 int (*deviceBlockDataRecvPacket_Proc)(client_t *client, char *packet, int length);
 int (*deviceBlockDataSendPacket_Proc)(struct bufferevent *bev, client_t *client, char *packet, int length);
 };
+
+
+typedef struct LBS {
+	unsigned short mcc;
+	unsigned short mnc;
+	unsigned short lac;
+	unsigned short cid;
+	signed char signal;
+} Lbs;
+
+typedef struct LOCINFO {
+	char u8DeviceId[LEN_DEVICE_ID*2+2];
+	char u8Longitude[2*LEN_LONGITUDE_DATA+2];
+	char u8Latitude[2*LEN_LATITUDE_DATA+2];
+	char u8TimeStamp[6];
+	char u8UbloxFlag;
+} LocationInfo;
+
 
 static struct ApolloProtocolProcess *ApolloProtocolInstance = NULL;
 

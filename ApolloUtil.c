@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "ApolloUtil.h"
 #include "ApolloProtocol.h"
@@ -28,6 +29,27 @@ void genBlockFilePathName(char *filename, char *pathname) {
 	sprintf(pathname, "block_data/%s", filename);
 }
 
+void genAgpsFilePathName(char *filename, char *pathname) {
+	
+	sprintf(pathname, "agps_data/%s_agps.dat", filename);
+}
+
+
+
+void writeTimeHeader(CH *buf) {
+	time_t timer;
+	struct tm *tblock;
+	timer = time(NULL);
+	tblock = localtime(&timer);
+
+	buf[0] = (char)(tblock->tm_year - 100);
+	buf[1] = (char)(tblock->tm_mon);
+	buf[2] = (char)(tblock->tm_wday);
+	buf[3] = (char)(tblock->tm_mday);
+	buf[4] = (char)(tblock->tm_hour);
+	buf[5] = (char)(tblock->tm_min);
+	buf[6] = (char)(tblock->tm_sec);
+}
 
 
 

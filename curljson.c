@@ -26,21 +26,6 @@
 #define LBS_MCC_MNC_INDEX	10
 #define LBS_STATION_INFO	14
 
-typedef struct LBS {
-	unsigned short mcc;
-	unsigned short mnc;
-	unsigned short lac;
-	unsigned short cid;
-	signed char signal;
-} Lbs;
-
-typedef struct LOCINFO {
-	char u8DeviceId[LEN_DEVICE_ID*2+2];
-	char u8Longitude[2*LEN_LONGITUDE_DATA+2];
-	char u8Latitude[2*LEN_LATITUDE_DATA+2];
-	char u8TimeStamp[6];
-} LocationInfo;
-
 void compute_prefix(unsigned char *pattern, unsigned char *array, int length) {
 	int k = 0, q = 0;
 	array[0] = 0;
@@ -99,6 +84,7 @@ void get_key(const char* buffer, char *value) {
 }
 
 extern const char* get_value_fromjson(const char *key, const char *json) ;
+extern void* ubloxDownloadApgs(void* arg);
 
 size_t handle_data(void* buffer,size_t size,size_t nmemb,void *stream){
 	//FILE *fptr = (FILE*)stream;	
@@ -113,6 +99,9 @@ size_t handle_data(void* buffer,size_t size,size_t nmemb,void *stream){
 	char u8RelationShipDevice[LEN_DEVICE_ID*2+6] = {0};
 	char u8RedisUserValue[REDIS_COMMAND_LENGTH] = {0};
 	char u8RedisDeviceGpsInfo[REDIS_COMMAND_LENGTH] = {0};
+	pthread_t tid = -1;
+	int err;
+	//extern void *http_post(void *data);
 
 	//printf("%2x%2x%2x%2x\n", pgps->apollo_id[0], pgps->apollo_id[1], pgps->apollo_id[2], pgps->apollo_id[3]);
 
@@ -152,6 +141,13 @@ size_t handle_data(void* buffer,size_t size,size_t nmemb,void *stream){
 		return -1;
 	}
 
+	if (locationInfo->u8UbloxFlag) {
+		err = pthread_create(&tid, NULL, ubloxDownloadApgs, (void *)locationInfo);
+		if(0 != err)
+			fprintf(stderr, "Couldn't run thread numbe, errno %d\n", err);
+		else
+			fprintf(stderr, "Thread\n");
+	}
 	//sprintf(u8High, "%d", 0);
 	u8High = 0;
 	//insert mysql 
@@ -287,25 +283,26 @@ void *http_post(void *data){
 	CURL *curl;	
 	CURLcode res;	
 	unsigned char buffer[POST_DATA_LENGTH];
-	LocationInfo locationInfo = {0};
+	LocationInfo *pLocationInfo = (LocationInfo*)malloc(sizeof(LocationInfo));
+	memset(pLocationInfo, 0, sizeof(LocationInfo));
 	
 	curl = curl_easy_init();	
 	if (!curl)	{		
 		fprintf(stderr,"curl init failed\n");		
 		return NULL;	
 	}	
-	//parse_gps_header_packet(data, &gps);
-	//locationInfo.u8DeviceId, 
-	printf("aaaaaaaaaa");
-	hextostring(locationInfo.u8DeviceId ,(char*)(data+IDX_DEVICE_ID), LEN_DEVICE_ID);
-	memcpy(locationInfo.u8TimeStamp,  data+44, 4);
+
+	pLocationInfo->u8UbloxFlag = ((*(char*)(data+IDX_DEVICE_LOCATIONTYPE)) & 0xF0);
+	hextostring(pLocationInfo->u8DeviceId ,(char*)(data+IDX_DEVICE_ID), LEN_DEVICE_ID);
+	memcpy(pLocationInfo->u8TimeStamp,  data+44, 4);
+	printf("%s\n", pLocationInfo->u8DeviceId);
 	encode_post_data(buffer, data);
 	printf("url:%s\n", buffer);
 	
 	curl_easy_setopt(curl,CURLOPT_URL,POSTURL); 
 	curl_easy_setopt(curl,CURLOPT_POSTFIELDS,buffer); 
 	curl_easy_setopt(curl,CURLOPT_WRITEFUNCTION,handle_data); 
-	curl_easy_setopt(curl,CURLOPT_WRITEDATA,&locationInfo); 
+	curl_easy_setopt(curl,CURLOPT_WRITEDATA,pLocationInfo); 
 	curl_easy_setopt(curl,CURLOPT_POST,1); 
 	
 	res = curl_easy_perform(curl);	

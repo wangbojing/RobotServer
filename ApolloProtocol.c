@@ -171,7 +171,7 @@ int phoneHeaderPacket(char *packet, int length, char *info) {
  * 43 00 00 00 07 02 00 00 00 00 00 00 23 45 43 32 //download blockdata
  * 43 00 00 00 07 41 01 00 86 18 87 41 87 42 90 43 //set family number
  * 43 00 00 00 07 42 01 00 86 18 87 56 87 42 90 43 //set contact number
- * 43 00 00 00 14 43 01 00 86 18 87 41 87 42 90 43 //set phone book
+ * 43 00 00 00 16 43 01 00 86 18 87 41 87 42 90 43 //set phone book
  * 43 00 00 00 07 44 01 00 86 18 87 41 87 42 90 43 //set location freq
  * 43 00 00 00 07 08 00 86 18 87 41 87 42 90 43 01//single cmd open 
  * 43 00 00 00 07 09 00 86 18 87 41 87 42 90 43 01//single cmd open 
@@ -234,6 +234,7 @@ int phoneCommandPacket(char *packet, int length) {
  * 47 20 16 01 05 00 00 00 07 01 11 30 91 27 16 02 20 64 64 26 03 45 65 23 00 34 32 25 25 25 25 25
  * 47 20 16 01 05 00 00 00 07 02 12 30 56 65 23 03 43 56 32 67 03 45 65 23 00 34 32 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25
  */
+extern void* ubloxDownloadApgs(void* arg);
 
 int deviceLocationPacket(char *packet, int length) {
 	char u8DeviceId[LEN_DEVICE_ID*2+1] = {0};
@@ -257,7 +258,7 @@ int deviceLocationPacket(char *packet, int length) {
 	if (-1 == get_value_fromredis(u8RelationShipDevice, u8RedisUserValue)) { // device id don't bind
 		return -1;
 	}
-	if ((length == LEN_GPS_LOCATION_DATA)) {
+	if ((length == LEN_GPS_LOCATION_DATA)) {		
 		hextostring(u8Longitude+1, packet+IDX_DEVICE_GPS_LONGITUDE, LEN_LONGITUDE_DATA);
 		u8Longitude[0] = 'E';
 		u8Longitude[4] = '.';
@@ -267,6 +268,23 @@ int deviceLocationPacket(char *packet, int length) {
 		u8Latitude[4] = '.';
 
 		sprintf(u8High, "%d", *(int*)(packet+IDX_DEVICE_GPS_HIGH));
+
+		if ((*(packet+IDX_DEVICE_LOCATIONTYPE)) & 0xF0) {
+			int err;
+			pthread_t tid = -1;
+			LocationInfo *pLocationInfo = (LocationInfo*)malloc(sizeof(LocationInfo));
+	
+			strcpy(pLocationInfo->u8Longitude, u8Longitude);
+			strcpy(pLocationInfo->u8Latitude, u8Latitude);
+			strcpy(pLocationInfo->u8DeviceId, u8DeviceId);
+
+			err = pthread_create(&tid, NULL, ubloxDownloadApgs, (void *)pLocationInfo);
+			if(0 != err)
+				fprintf(stderr, "Couldn't run thread numbe, errno %d\n", err);
+			else
+				fprintf(stderr, "Thread\n");
+		}
+		
 		//insert mysql 
 		insertDeviceGps(u8Longitude, u8Latitude, u8High, u8DeviceId);
 		printf(" aaa %x %x %x %x\n", packet[IDX_DEVICE_GPS_HIGH], packet[IDX_DEVICE_GPS_HIGH+1], 
@@ -444,7 +462,7 @@ int deviceBlockDataRecvPacket(client_t *client, char *packet, int length) {
 // 44 20 16 03 04 02 03 01 08 25 25 25 25 25 25 25 
 int deviceBlockDataSendPacket(struct bufferevent *bev, client_t *client, char *packet, int length) {
 	char u8DeviceId[LEN_DEVICE_ID*2+1] = {0};
-	char u8FileName[LEN_DEVICE_ID*4] = {0};
+	char u8FileName[LEN_DEVICE_ID*8] = {0};
 	int totalLength = 0, sendLength = 0;
 
 	if (length != LEN_DEVICE_DOWNLOAD) {
@@ -452,9 +470,16 @@ int deviceBlockDataSendPacket(struct bufferevent *bev, client_t *client, char *p
 	}
 
 	hextostring(u8DeviceId ,packet+IDX_DEVICE_ID, LEN_DEVICE_ID);
-	genBlockFilePathName(u8DeviceId, u8FileName);
-	apollo_printf("FileName:%s\n", u8FileName);
-	
+	if (*(packet+13) == 0x60) {
+		genBlockFilePathName(u8DeviceId, u8FileName);
+		apollo_printf("block FileName:%s\n", u8FileName);
+	} else if(*(packet+13) == 0x61) {
+		genAgpsFilePathName(u8DeviceId, u8FileName);
+		apollo_printf("agps FileName:%s\n", u8FileName);
+	} else {
+		genBlockFilePathName(u8DeviceId, u8FileName);
+		apollo_printf("block FileName:%s\n", u8FileName);
+	}
 	totalLength = takeDataPacket(u8FileName, client->pBlock->buffer, packet);
 	apollo_printf("totalLength:%d\n", totalLength);
 	while (sendLength < totalLength) {
@@ -523,7 +548,10 @@ void apolloParsePacket(struct bufferevent *bev, client_t *client) {
 						apolloReturnPacket(bev, client, retbuf, LEN_DEVICE_RETURN_BUFFER);
 					}
 				} else if (result == 0) {
-					apolloReturnPacket(bev, client, retbuf, LEN_DEVICE_RETURN_BUFFER);			
+					char retTimeBuf[LEN_DEVICE_RETURN_BUFFER*2+2] = {0};
+					strcpy(retTimeBuf, "RETOK");
+					writeTimeHeader(retTimeBuf+6);
+					apolloReturnPacket(bev, client, retTimeBuf, LEN_DEVICE_RETURN_BUFFER*2+2);			
 				} else {
 					apollo_printf(" aaa [%s:%d] invaild key \n", __func__, __LINE__);
 				}

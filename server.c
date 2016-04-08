@@ -1,6 +1,6 @@
 /**
  * To compile: gcc -o echoserver_threaded echoserver_threaded.c workqueue.c -levent -lpthread
- * gcc -o RobotServer ApolloProtocol.c ApolloSqlOperator.c ApolloRedis.c ApolloUtil.c server.c workqueue.c curljson.c -levent -lpthread -lmysqlclient -lhiredis -lcurl  -I /usr/include/mysql/
+ * gcc -o RobotServer ApolloProtocol.c ApolloSqlOperator.c ApolloRedis.c ApolloUtil.c server.c workqueue.c anolclient_china.c curljson.c -levent -lpthread -lmysqlclient -lhiredis -lcurl  -I /usr/include/mysql/
  * To run: ./RobotServer
  */
 

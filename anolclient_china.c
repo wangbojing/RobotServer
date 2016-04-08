@@ -115,6 +115,8 @@
 #include <signal.h>
 
 #include "ubx.h"
+#include "ApolloUtil.h"
+#include "ApolloProtocol.h"
 
 #define BUFFER_SIZE 8192	//!< Size of the temporary buffers
 #define MAXFIELDLEN 128     //!< Maximum length for username and password
@@ -473,162 +475,75 @@ I getAssistNowOnlineData(CH * connectTo,I proto,CH * cmd,REQ_t * userInfo, CH * 
 	}
 }
 
-I    gpsDes = -1;  // File description to GPS device
-static void sighandler(int signal) {
-	fprintf(stdout, "Received signal %d: %s.  Shutting down.\n", signal, strsignal(signal));
-	//killServer();	
-	close(gpsDes);
-
-	exit(0);
-}
-
-
-//------------------------------------------------------------------------------
-//! Main Entry
-/*!
-  Main function
-  - check command line arguments
-  - open gps receiver serial port
-  - retrieve assist now online data
-  - send to GPS receiver
-  - cleanup
-  - start again
-
-  \param argc   number of arguments
-  \param argv   argument string array
-  \return 1 on error, 0 on success
-*/
-I main()
+void* ubloxDownloadApgs(void* arg)
 {	
-	CH retBuf[36] = {0};
-	CH NavInfo[11] = {0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x30, 0x01, 0x3C, 0xA3};
+	CH fileName[MAXFIELDLEN] = {0};
+	CH cmdShell[MAXFIELDLEN] = {0};
 	CH   connectTo[MAXFIELDLEN] = "agps.u-blox.com:46434";
 	I    i; 
 	REQ_t req = { "wangbojing1989@foxmail.com", "Iusrpo", 23.0744,113.14028,0,1500e3}; //<
 	I    count=1, size;  // Just to count the number of restarts - and to cycle between different aiding modes and protocols
+	LocationInfo *locationInfo = (LocationInfo*)arg;
+	I	 gpsDes = -1;  // File description to GPS device
+	CH u8Cmd[12] = {0};
 
+	req.lat = atof(locationInfo->u8Latitude+1);
+	req.lon = atof(locationInfo->u8Longitude+1);
+	printf(" Deiv:%s, lat:%f, lng:%f\n", locationInfo->u8DeviceId, req.lat, req.lon);
 
-	// In this example, we loop forever, sending restarts 
-	#if (AGPS_SAVE_TYPE == AGPS_SAVE_FILE)
-	gpsDes = open(AGPS_FILE_NAME, O_RDWR | O_CREAT);
+	sprintf(fileName, "agps_data/%s_%s", locationInfo->u8DeviceId, AGPS_FILE_NAME);
+	gpsDes = open(fileName, O_RDWR | O_CREAT);
 	if (gpsDes < 0) {
 		perror(AGPS_FILE_NAME);  
-		return -1;
+		return NULL;
 	}
-	#elif (AGPS_SAVE_TYPE == AGPS_SAVE_UART)
-	gpsDes = open(UART_DEVICE_NAME, O_RDWR);
-	if (gpsDes < 0) {
-		perror(UART_DEVICE_NAME);  
-		return -1;
-	}
-	setSerialParams(gpsDes, 9600);
-	#endif
 	
-	#if 1
-	sigset_t sigset;
-	sigemptyset(&sigset);
-	struct sigaction siginfo = {
-		.sa_handler = sighandler,
-		.sa_mask = sigset,
-		.sa_flags = SA_RESTART,
-	};
-	sigaction(SIGINT, &siginfo, NULL);
-	sigaction(SIGTERM, &siginfo, NULL);
-	#endif
-	// at regular intervals and deliver AssistNow data
-	while(1)
+	CH buffer[BUFFER_SIZE];  // temporary buffer
+	I  len;
+	I  timeout = 20; 
+	
+
+	tcflush(gpsDes,TCIOFLUSH); // Flush the Send/Receive queues to the GPS receiver
+
+	fprintf(stderr,"AssistNow Online Request %i\n",++count);
+	
+	if ((len=getAssistNowOnlineData(connectTo,
+							  ANOL_TCP, //count&0x01 ? ANOL_TCP:ANOL_UDP, // Switch between TCP and UDP protocol in this example code
+							  "aid", // Switch between "full" and "aid" modes. 
+							  &req,  // User credentials and approximate location 
+							  buffer+8,BUFFER_SIZE))   >0  )
 	{
-		CH buffer[BUFFER_SIZE];  // temporary buffer
-		I  len;
-		I  timeout = 20; 
-		
-
-		tcflush(gpsDes,TCIOFLUSH); // Flush the Send/Receive queues to the GPS receiver
-
-		fprintf(stderr,"AssistNow Online Request %i\n",++count);
-		
-
-		
-		// Retrieve Assist Now Online Data
-		//
-		// Please note that the REQ_t structure must be filled in prior to that 
-		// call (username, password, etc)
-		// Also, the buffer must be large enough. 
-		// -  For commands "aid", "alm" and "eph", about 1.5 kBytest is more than sufficient
-		// -  For command "full", about 3.0kBytes is large enough
-		// 
-		// For this example application, we change between TCP and UDP protocol. 
-		// Also, we change between "aid" and "full" assistance commands
-		if ((len=getAssistNowOnlineData(connectTo,
-								  count&0x01 ? ANOL_TCP:ANOL_UDP, // Switch between TCP and UDP protocol in this example code
-								  "aid", // Switch between "full" and "aid" modes. 
-								  &req,  // User credentials and approximate location 
-								  buffer,BUFFER_SIZE))   >0  )
-		{
-			// We have successfully receiverd data from the server, which is 
-			// now within 'buffer', for up to 'len' bytest
-			fprintf(stderr,"-> forwarding %i bytes to GPS receiver\n",len);
-			// We are sending this data right away to the GPS receiver
-			//write(gpsDes,buffer,len);
-			//write file
-			//#if (AGPS_SAVE_TYPE == AGPS_SAVE_FILE) //write file
-			//#elif (AGPS_SAVE_TYPE == AGPS_SAVE_UART) //write serial port	
-			#if (AGPS_SAVE_TYPE == AGPS_SAVE_UART)
-			size = write(gpsDes,NavInfo,11);
-			if (size < 0) {
-				perror("write:");  
-			}
-			tcflush(gpsDes,TCIOFLUSH);
-			sleep(2);
-			size = read(gpsDes, retBuf, 10);
-			if (size < 0) {
-				perror("read:"); 
-			}
-			printf("buf : %d \n", size);
-			for (i = 0;i < size;i ++)
-				printf(" %2x", retBuf[i]);
-			printf("\n");
-			#endif
-			size = write(gpsDes,buffer,len);
-			if (size < 0) {
-				perror("write:");  
-			}
-			printf("write size : %d \n", size);
-			#if (AGPS_SAVE_TYPE == AGPS_SAVE_UART)
-			tcflush(gpsDes,TCIOFLUSH);
-			sleep(2);
-			size = read(gpsDes, retBuf, 32);
-			if (size < 0) {
-				perror("read:"); 
-			}
-			printf("buf : %d \n", size);
-			for (i = 0;i < size;i ++)
-				printf(" %2x", retBuf[i]);
-			printf("\n");
-			#endif
-			//#endif
-		} else {
-			// Some error occurred. See getAssistNowOnlineData() for possible error codes
-			fprintf(stderr,"-> failed. error code %i\n",len);
+		// We have successfully receiverd data from the server, which is 
+		// now within 'buffer', for up to 'len' bytest
+		fprintf(stderr,"-> forwarding %i bytes to GPS receiver\n",len);
+		// We are sending this data right away to the GPS receiver
+		//write(gpsDes,buffer,len);
+		//write file
+		//#if (AGPS_SAVE_TYPE == AGPS_SAVE_FILE) //write file
+		//#elif (AGPS_SAVE_TYPE == AGPS_SAVE_UART) //write serial port	
+		writeTimeHeader(buffer);
+		size = write(gpsDes,buffer,len+8);
+		if (size < 0) {
+			perror("write:");  
 		}
-
-		// In this example, we repeatedly perform a assisted GPS start.
-		// so, we do not really care what the GPS 
-		// receiver's output is - we therefore flush the IO queues
-		// once every second to avoid any buffer overflows
-		while(timeout-->0)
-		{
-			tcflush(gpsDes,TCIOFLUSH);
-			sleep(1);
-		}
-
-		
-		fprintf(stderr,"\n");
+		tcflush(gpsDes,TCIOFLUSH);
+		//#endif
+	} else {
+		// Some error occurred. See getAssistNowOnlineData() for possible error codes
+		fprintf(stderr,"-> failed. error code %i\n",len);
 	}
+	close(gpsDes);
 
-	// close file
+	sprintf(cmdShell, "chmod 777 %s", fileName);
+	system(cmdShell);
+
+	printf(" u8DeviceId:%s\n", locationInfo->u8DeviceId);
+	sprintf(u8Cmd, "%d", CMD_PHONE_DEVICE_AGPS_DOWNLOAD);
+	if (-1 == set_key_toredis(locationInfo->u8DeviceId, u8Cmd)) {
+		return NULL;
+	}
 	
-	// indicate success
-	return 0;
+	free(locationInfo);
+	return NULL;
 }
 

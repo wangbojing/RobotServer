@@ -3,6 +3,7 @@
 #ifndef __APOLLO_UTIL_H__
 #define __APOLLO_UTIL_H__
 
+#include "ubx.h"
 
 #define HIGH_HEXTOSTRING(x)		(((x & 0xF0) >> 4)+0x30)
 #define LOW_HEXTOSTRING(x)		((x & 0xF) + 0x30)
@@ -19,11 +20,13 @@ int read_dat(const char *filename, char *data, int len) ;
 
 void genBlockFileName(char* sender, char* filename);
 void genBlockFilePathName(char *filename, char *pathname);
+void genAgpsFilePathName(char *filename, char *pathname);
 
 int takeDataPacket(const char *filename,unsigned char *data, char *packet);
 
 int Separation(char ch, char *sequence, char ***pChTable, int *Count);
 int apollo_atoi(char* pstr) ;
+void writeTimeHeader(CH *buf);
 
 
 
