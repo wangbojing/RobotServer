@@ -9,12 +9,15 @@
 #include <mysql.h>
 #include <string.h>
 #include <pthread.h>
+#include <zdb.h>
 
 
-#define MYSQL_HOST		"localhost" //"192.168.1.150" //localhost
+#define MYSQL_HOST		"120.76.25.198" //"192.168.1.150" //localhost
 #define MYSQL_USER		"root"
 #define MYSQL_PWD		"admin"
 #define MYSQL_DB		"APOLLO_I"
+
+#define MYSQL_DB_CONN_STRING		"mysql://120.76.25.198:3306/APOLLO_I?user=wangbojing&password=zhaomeiping"
 
 #define SQL_LANGUAGE_LENGTH			512
 #define CONNECTION_POOL_SIZE		50
@@ -31,6 +34,10 @@
 
 #define SQL_SELECT_DEVICEID			"SELECT R_DEVICE_ID  FROM TBL_USER_RELATIONSHIP WHERE R_USER_ID=%d"
 #define SQL_SELECT_LOCATION_NEWINFO	"SELECT  * FROM TBL_DEVICE_LOCATION WHERE L_DEVICE_ID = '%s' ORDER BY L_TIME DESC"
+
+#define TYPE_APOLLO_MYSQL_CONNECTIONPOOL	1
+#define TYPE_ZDB_MYSQL_CONNECTIONPOOL		2
+#define CONNECTIONPOOL_SELECT				TYPE_ZDB_MYSQL_CONNECTIONPOOL
 
 typedef enum _ConnectionType {
 	CONNECT_CLOSE = 0,
@@ -56,15 +63,31 @@ typedef struct _MySqlConnectionPool {
 	pthread_mutex_t PoolLock;
 } MySqlConnectionPool;
 
-
+#if (CONNECTIONPOOL_SELECT == TYPE_APOLLO_MYSQL_CONNECTIONPOOL)
 static MySqlConnectionPool *ConnectionPool_Instance = NULL;
 MySqlConnectionPool *getMySqlConnectionPool_Instance(void) ;
 
 //struct location_package_data;
 MYSQL* get_connection_from_pool(void);
 char return_connection_to_pool(MYSQL *Conn);
+
+#elif (CONNECTIONPOOL_SELECT==TYPE_ZDB_MYSQL_CONNECTIONPOOL)
+
+static ConnectionPool_T ConnectionPool_Instance = 0;
+//ConnectionPool_T getMySqlConnectionPool_Instance(void);
+void ConnectionPoolInstanceInit(void);
+
+
+#endif
+
 int insertDeviceGps(const char* longitude, const char* latitude, const char* high, const char* device_id);
 int selectLocationNewItem(char *u8DeviceId, int UserId);
+void initUserInfoList(void);
+void initUserAndDeviceRelationshipList(void) ;
+int insertUser(const char* userName, const char* password);
+int selectUserId(const char* userName, const char* password, unsigned int *userId);
+int updatePassword(const char* userName, const char* password) ;
+
 
 
 #endif

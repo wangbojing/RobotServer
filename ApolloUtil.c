@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <ctype.h>
 
 #include "ApolloUtil.h"
 #include "ApolloProtocol.h"
@@ -51,6 +52,19 @@ void writeTimeHeader(CH *buf) {
 	buf[6] = (char)(tblock->tm_sec);
 }
 
+int writeLogFileTimeStamp(char *buf) {
+	time_t timer;
+	struct tm *tblock;
+	timer = time(NULL);
+	tblock = localtime(&timer);
+
+	sprintf(buf, " [%d-%d-%d %d:%d:%d] ", (tblock->tm_year%100),
+		(tblock->tm_mon), (tblock->tm_mday), (tblock->tm_hour),
+		(tblock->tm_min), (tblock->tm_sec));
+
+	return strlen(buf);
+}
+
 
 
 #define LOGFILE_NAME		".log"
@@ -58,8 +72,18 @@ void writeTimeHeader(CH *buf) {
 
 static FILE * pLogFiles = NULL;
 static FILE* get_logs_handler(void) {
+	char buffer[128] = {0};
+	time_t timer;
+	struct tm *tblock;
+	timer = time(NULL);
+	tblock = localtime(&timer);
+
+	sprintf(buffer, "./log_data/%d-%d-%d-%d-%d%s", tblock->tm_year, 
+		tblock->tm_mon, tblock->tm_mday, tblock->tm_hour,
+		tblock->tm_min, LOGFILE_NAME);
+	
 	if (pLogFiles == NULL) {
-		pLogFiles = fopen(LOGFILE_NAME, "w");
+		pLogFiles = fopen(buffer, "w");
 		if (pLogFiles == NULL) {
 			apollo_printf("Error: can not create %s\n", LOGFILE_NAME);
 			return NULL;
@@ -73,16 +97,25 @@ static FILE* get_logs_handler(void) {
 
 int dbg_printf(const char *fmt, ...) {
 	int i, iret;
+	int len;
 	char szPrint[PRINTF_CHAR_MAX] = {0};
 	FILE *fp = get_logs_handler();
 
 	va_list ap;
 	va_start(ap, fmt);
-	iret = vsnprintf(szPrint, PRINTF_CHAR_MAX, fmt, ap);
+
+	len = writeLogFileTimeStamp(szPrint);
+	iret = vsnprintf(szPrint+len-1, PRINTF_CHAR_MAX-len, fmt, ap);
 	va_end(ap);
 
 	i = fwrite(szPrint, 1, iret, fp);
 	fflush(fp);
+	//tcflush(gpsDes,TCIOFLUSH);
+
+	//IOT
+	//fclose(fp);
+	//fp = NULL;
+	//pLogFiles = NULL;
 
 	return i;
 }

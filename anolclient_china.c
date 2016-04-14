@@ -475,6 +475,8 @@ I getAssistNowOnlineData(CH * connectTo,I proto,CH * cmd,REQ_t * userInfo, CH * 
 	}
 }
 
+extern int set_key_toredis(const char *key, const char *value);
+
 void* ubloxDownloadApgs(void* arg)
 {	
 	CH fileName[MAXFIELDLEN] = {0};

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include <curl/curl.h>
 
 #include "ApolloProtocol.h"
@@ -85,6 +86,7 @@ void get_key(const char* buffer, char *value) {
 
 extern const char* get_value_fromjson(const char *key, const char *json) ;
 extern void* ubloxDownloadApgs(void* arg);
+extern int insertDeviceGps(const char* longitude, const char* latitude, const char* high, const char* device_id);
 
 size_t handle_data(void* buffer,size_t size,size_t nmemb,void *stream){
 	//FILE *fptr = (FILE*)stream;	
@@ -95,7 +97,7 @@ size_t handle_data(void* buffer,size_t size,size_t nmemb,void *stream){
 	char *p2 = "latitude";
 	char log[16] = {0};
 	char lat[16] = {0};	
-	int u8High = 0;
+	char u8High[6] = {0};
 	char u8RelationShipDevice[LEN_DEVICE_ID*2+6] = {0};
 	char u8RedisUserValue[REDIS_COMMAND_LENGTH] = {0};
 	char u8RedisDeviceGpsInfo[REDIS_COMMAND_LENGTH] = {0};
@@ -148,12 +150,12 @@ size_t handle_data(void* buffer,size_t size,size_t nmemb,void *stream){
 		else
 			fprintf(stderr, "Thread\n");
 	}
-	//sprintf(u8High, "%d", 0);
-	u8High = 0;
+	sprintf(u8High, "%d", 0);
+	//u8High = 0;
 	//insert mysql 
 	insertDeviceGps(locationInfo->u8Longitude, locationInfo->u8Latitude, u8High, locationInfo->u8DeviceId);
 	
-	sprintf(u8RedisDeviceGpsInfo, "G_%s_%s_%d_1_%ld", locationInfo->u8Longitude, locationInfo->u8Latitude, 
+	sprintf(u8RedisDeviceGpsInfo, "G_%s_%s_%s_1_%ld", locationInfo->u8Longitude, locationInfo->u8Latitude, 
 	u8High, *((long*)(locationInfo->u8TimeStamp)));
 	apollo_printf(" GPS : %s\n", u8RedisDeviceGpsInfo);
 	if (-1 == set_key_toredis(u8RedisUserValue, u8RedisDeviceGpsInfo)) {

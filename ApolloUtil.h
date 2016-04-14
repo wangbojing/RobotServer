@@ -31,7 +31,7 @@ void writeTimeHeader(CH *buf);
 
 
 
-#define DEBUG 1
+//#define DEBUG 1
 #ifndef DEBUG
 #define apollo_printf dbg_printf 
 #else

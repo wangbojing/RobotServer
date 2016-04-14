@@ -1,6 +1,6 @@
 /**
  * To compile: gcc -o echoserver_threaded echoserver_threaded.c workqueue.c -levent -lpthread
- * gcc -o RobotServer ApolloProtocol.c ApolloSqlOperator.c ApolloRedis.c ApolloUtil.c server.c workqueue.c anolclient_china.c curljson.c -levent -lpthread -lmysqlclient -lhiredis -lcurl  -I /usr/include/mysql/
+ * gcc -o RobotServer ApolloProtocol.c ApolloSqlOperator.c ApolloRedis.c ApolloUtil.c server.c workqueue.c anolclient_china.c curljson.c -levent -lpthread -lmysqlclient -lzdb -lhiredis -lcurl  -I /usr/include/mysql/
  * To run: ./RobotServer
  */
 
@@ -20,6 +20,8 @@
 
 #include "workqueue.h"
 #include "ApolloProtocol.h"
+#include "ApolloUtil.h"
+#include "ApolloSqlOperator.h"
 
 /* Port to listen on. */
 #define SERVER_PORT 8880
@@ -240,6 +242,8 @@ void on_accept(int fd, short ev, void *arg) {
 	 * called. */
 	bufferevent_enable(client->buf_ev, EV_READ);
 
+	apollo_printf("\n------------------------------------------------------\n");
+	apollo_printf("\n an new Client is Coming, socket : %d \n", client->fd);		
 	/* Create a job object and add it to the work queue. */
 	if ((job = malloc(sizeof(*job))) == NULL) {
 		warn("failed to allocate memory for job state");
@@ -358,8 +362,9 @@ static void sighandler(int signal) {
  * You can remove this and simply call runServer() from your application. */
 int main(int argc, char *argv[]) {
 	initApolloProtocol();
-	init_mysql_pool();
-
+	
+	ConnectionPoolInstanceInit();
+	
 	initUserInfoList();
 	initUserAndDeviceRelationshipList();
 

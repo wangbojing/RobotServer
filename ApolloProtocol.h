@@ -177,6 +177,7 @@ static struct ApolloProtocolProcess *ApolloProtocolInstance = NULL;
 /* ** **** ********  ****************  Function Define  ****************  ******** **** ** */
 void apolloParsePacket(struct bufferevent *bev, client_t *client);
 void initApolloProtocol(void);
+int apolloReturnPacket(struct bufferevent *bev, client_t *client, char *buffer, int length);
 
 
 extern void closeClient(client_t *client);

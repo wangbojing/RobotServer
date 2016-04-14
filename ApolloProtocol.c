@@ -85,7 +85,7 @@ int deviceHeartPacket(char *packet, int length, char* info) {
 	if (-1 == get_value_fromredis(u8RelationShipDevice, u8RedisUserValue)) { // device id don't bind
 		return -1;
 	}
-	apollo_printf(" timeDiff: %d", *(int*)(packet+24));
+	apollo_printf(" timeDiff: %d\n", *(int*)(packet+24));
 	//set device info {device->User: 1->1}
 	sprintf(u8RedisDeviceInfo, "I_%d_%ld", *(packet+IDX_DEVICE_POWER), *((long*)(packet+IDX_DEVICE_HEARTPACKET_TIMESTAMP)));
 	apollo_printf(" u8RedisDeviceInfo:%s, u8RedisUserValue:%s\n", u8RedisDeviceInfo, u8RedisUserValue);
@@ -287,8 +287,8 @@ int deviceLocationPacket(char *packet, int length) {
 		
 		//insert mysql 
 		insertDeviceGps(u8Longitude, u8Latitude, u8High, u8DeviceId);
-		printf(" aaa %x %x %x %x\n", packet[IDX_DEVICE_GPS_HIGH], packet[IDX_DEVICE_GPS_HIGH+1], 
-			packet[IDX_DEVICE_GPS_HIGH+2], packet[IDX_DEVICE_GPS_HIGH+3]);
+		//printf(" aaa %x %x %x %x\n", packet[IDX_DEVICE_GPS_HIGH], packet[IDX_DEVICE_GPS_HIGH+1], 
+		//	packet[IDX_DEVICE_GPS_HIGH+2], packet[IDX_DEVICE_GPS_HIGH+3]);
 		sprintf(u8RedisDeviceGpsInfo, "G_%s_%s_%d_0_%ld", u8Longitude, u8Latitude, 
 		*(int*)(packet+IDX_DEVICE_GPS_HIGH), *((long*)(packet+IDX_DEVICE_GPS_TIMESTAMP)));
 		apollo_printf("key:%s, GPS : %s\n",u8RedisUserValue, u8RedisDeviceGpsInfo);
@@ -547,7 +547,7 @@ void apolloParsePacket(struct bufferevent *bev, client_t *client) {
 						retbuf[IDX_DEVICE_RETURN_COMMAND] = cmd;						
 						apolloReturnPacket(bev, client, retbuf, LEN_DEVICE_RETURN_BUFFER);
 					}
-				} else if (result == 0) {
+				} else if (result == 0 || result == -1 || result == -2) {
 					char retTimeBuf[LEN_DEVICE_RETURN_BUFFER*2+2] = {0};
 					strcpy(retTimeBuf, "RETOK");
 					writeTimeHeader(retTimeBuf+6);
