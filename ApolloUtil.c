@@ -26,13 +26,24 @@ void genBlockFileName(char* sender, char* filename) {
 }
 
 void genBlockFilePathName(char *filename, char *pathname) {
-	
+#if (DATA_SAVE_TYPE == DISTRBUTE_SAVE)
+	sprintf(pathname, "/usr/RServer/block_data/%s", filename);
+#elif (DATA_SAVE_TYPE == DISK_FILE_SAVE)
 	sprintf(pathname, "block_data/%s", filename);
+#else
+	sprintf(pathname, "block_data/%s", filename);
+#endif
 }
 
 void genAgpsFilePathName(char *filename, char *pathname) {
-	
+#if (DATA_SAVE_TYPE == DISTRBUTE_SAVE)
+	sprintf(pathname, "/usr/RServer/agps_data/%s_agps.dat", filename);
+#elif (DATA_SAVE_TYPE == DISK_FILE_SAVE)
 	sprintf(pathname, "agps_data/%s_agps.dat", filename);
+#else
+	sprintf(pathname, "agps_data/%s_agps.dat", filename);
+#endif
+
 }
 
 
@@ -77,11 +88,21 @@ static FILE* get_logs_handler(void) {
 	struct tm *tblock;
 	timer = time(NULL);
 	tblock = localtime(&timer);
-
-	sprintf(buffer, "./log_data/%d-%d-%d-%d-%d%s", tblock->tm_year, 
+	
+#if (DATA_SAVE_TYPE == DISTRBUTE_SAVE)
+	sprintf(buffer, "/usr/RServer/log_data/%d-%d-%d-%d-%d%s", tblock->tm_year, 
 		tblock->tm_mon, tblock->tm_mday, tblock->tm_hour,
 		tblock->tm_min, LOGFILE_NAME);
-	
+#elif (DATA_SAVE_TYPE == DISK_FILE_SAVE)
+	sprintf(buffer, "log_data/%d-%d-%d-%d-%d%s", tblock->tm_year, 
+		tblock->tm_mon, tblock->tm_mday, tblock->tm_hour,
+		tblock->tm_min, LOGFILE_NAME);
+#else
+	sprintf(buffer, "log_data/%d-%d-%d-%d-%d%s", tblock->tm_year, 
+		tblock->tm_mon, tblock->tm_mday, tblock->tm_hour,
+		tblock->tm_min, LOGFILE_NAME);
+#endif
+
 	if (pLogFiles == NULL) {
 		pLogFiles = fopen(buffer, "w");
 		if (pLogFiles == NULL) {

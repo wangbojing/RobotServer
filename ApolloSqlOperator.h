@@ -17,7 +17,8 @@
 #define MYSQL_PWD		"admin"
 #define MYSQL_DB		"APOLLO_I"
 
-#define MYSQL_DB_CONN_STRING		"mysql://120.76.25.198:3306/APOLLO_I?user=wangbojing&password=zhaomeiping"
+//#define MYSQL_DB_CONN_STRING		"mysql://120.76.25.198:3306/APOLLO_I?user=wangbojing&password=zhaomeiping"
+#define MYSQL_DB_CONN_STRING		"mysql://112.93.116.188:3306/APOLLO_I?user=watch_server&password=123456"
 
 #define SQL_LANGUAGE_LENGTH			512
 #define CONNECTION_POOL_SIZE		50

@@ -5,7 +5,7 @@
 
 
 /* ** **** ********  ****************  Redis Server Info  ****************  ******** **** ** */
-#define REDIS_HOST		"localhost"
+#define REDIS_HOST		"112.93.116.188" //"120.76.25.198"
 #define REDIS_PORT		6379
 #define REDIS_COMMAND_LENGTH	256
 

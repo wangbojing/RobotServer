@@ -14,6 +14,10 @@
 #define POSTFIELDS "requestdata={\"celltowers\":[{\"cell_id\":\"26353\",\"lac\":\"24802\",\"mcc\":\"460\",\"mnc\":\"0\",\"signalstrength\":\"-60\"},{\"cell_id\":\"14454\",\"lac\":\"22831\",\"mcc\":\"460\",\"mnc\":\"0\",\"signalstrength\":\"-71\"},{\"cell_id\":\"11433\",\"lac\":\"22831\",\"mcc\":\"460\",\"mnc\":\"0\",\"signalstrength\":\"-75\"},{\"cell_id\":\"10326\",\"lac\":\"22831\",\"mcc\":\"460\",\"mnc\":\"0\",\"signalstrength\":\"-76\"}],\"wifilist\":[{\"macaddress\":\"00:0b:0e:7d:17:82\",\"time\":\"0\",\"singalstrength\":\"-8\"},{\"macaddress\":\"00:0b:0e:7d:17:84\",\"time\":\"0\",\"singalstrength\":\"-8\"}],\"mnctype\":\"gsm\"}&type=0&key=ade0044a7a6b49adbbf1e490bf8f0e9c"
 #define FILENAME   "curlposttest.log"
 
+
+#define POSTURL_FALLDOWN		"http://familycareapi.aliapp.com/api"
+#define POSTFIELDS_FALLDOWN		"m=health&a=falldown&deviceid=%s"
+
 #define LONGITUDE_KEY	 	"longitude"
 #define LATITUDE_KEY		"latitude"
 
@@ -280,6 +284,71 @@ int encode_post_data(unsigned char *buffer, unsigned char *data) {
 }
 
 //extern void parse_gps_header_packet(byte *req, gps_data *gps) ;
+size_t handle_falldown_result(void* buffer,size_t size,size_t nmemb,void *stream) {
+	printf("buffer:%s\n", (char*)buffer);
+	return size*nmemb;
+}
+
+
+int encode_post_falldown_data(unsigned char *buffer, unsigned char *data) {
+	unsigned char deviceId[20] = {0};
+	hextostring(deviceId ,(char*)(data+IDX_DEVICE_ID), LEN_DEVICE_ID);
+	sprintf(buffer, "%s?m=health&a=falldown&deviceid=%s", POSTURL_FALLDOWN, deviceId);
+
+	return strlen(buffer);
+}
+
+
+void *http_device_falldown(void *data) {
+	CURL *curl;	
+	CURLcode res;	
+	unsigned char buffer[POST_DATA_LENGTH] = {0};
+
+	
+	CURLcode return_code;
+	return_code = curl_global_init(CURL_GLOBAL_ALL);
+	if (CURLE_OK != return_code)
+	{
+		fprintf(stderr,"init libcurl failed.\n");		
+		return NULL;
+	}
+
+	curl = curl_easy_init();	
+	if (!curl)	{		
+		fprintf(stderr,"curl init failed\n");		
+		return NULL;	
+	}
+	encode_post_falldown_data(buffer, (unsigned char*)data);
+	printf(" post: %s\n", buffer);
+	curl_easy_setopt(curl,CURLOPT_URL,buffer); 
+	curl_easy_setopt(curl,CURLOPT_HTTPGET, 1L); 
+	//curl_easy_setopt(curl,CURLOPT_HTTPGET,buffer); 
+	curl_easy_setopt(curl,CURLOPT_WRITEFUNCTION,handle_falldown_result); 
+	curl_easy_setopt(curl,CURLOPT_WRITEDATA, NULL); 
+	//curl_easy_setopt(curl,CURLOPT_GET,1); 
+	
+	res = curl_easy_perform(curl);	
+	if (res != CURLE_OK)	{		
+		switch(res)		{			
+			case CURLE_UNSUPPORTED_PROTOCOL:				
+				fprintf(stderr,"CURLE_UNSUPPORTED_PROTOCOL\n");			
+			case CURLE_COULDNT_CONNECT:				
+				fprintf(stderr,"CURLE_COULDNT_CONNECT\n");			
+			case CURLE_HTTP_RETURNED_ERROR:				
+				fprintf(stderr,"CURLE_HTTP_RETURNED_ERROR\n");			
+			case CURLE_READ_ERROR:				
+				fprintf(stderr,"CURLE_READ_ERROR\n");			
+			default:				
+				fprintf(stderr,"default %d\n",res);		
+		}		
+		return NULL;	
+	}	
+	//printf("running success");
+	curl_easy_cleanup(curl);
+	
+	return NULL;
+	
+}
 
 void *http_post(void *data){	
 	CURL *curl;	

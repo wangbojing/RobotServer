@@ -341,7 +341,7 @@ I getAssistNowOnlineData(CH * connectTo,I proto,CH * cmd,REQ_t * userInfo, CH * 
 
 	// Set up a timeout for the socket
 	struct timeval tv;
-	tv.tv_sec = 5;
+	tv.tv_sec = 30;
 	tv.tv_usec = 0;
 	if (setsockopt(agpsSocket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,  sizeof(tv)))
 	{
@@ -492,9 +492,14 @@ void* ubloxDownloadApgs(void* arg)
 	req.lat = atof(locationInfo->u8Latitude+1);
 	req.lon = atof(locationInfo->u8Longitude+1);
 	printf(" Deiv:%s, lat:%f, lng:%f\n", locationInfo->u8DeviceId, req.lat, req.lon);
-
+#if (DATA_SAVE_TYPE == DISTRBUTE_SAVE)
+	sprintf(fileName, "/usr/RServer/agps_data/%s_%s", locationInfo->u8DeviceId, AGPS_FILE_NAME);
+#elif (DATA_SAVE_TYPE == DISK_FILE_SAVE)
 	sprintf(fileName, "agps_data/%s_%s", locationInfo->u8DeviceId, AGPS_FILE_NAME);
-	gpsDes = open(fileName, O_RDWR | O_CREAT);
+#else
+	sprintf(fileName, "agps_data/%s_%s", locationInfo->u8DeviceId, AGPS_FILE_NAME);
+#endif
+	gpsDes = open(fileName, O_RDWR | O_CREAT);
 	if (gpsDes < 0) {
 		perror(AGPS_FILE_NAME);  
 		return NULL;

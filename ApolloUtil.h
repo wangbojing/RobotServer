@@ -31,13 +31,19 @@ void writeTimeHeader(CH *buf);
 
 
 
-//#define DEBUG 1
+#define DEBUG 1
 #ifndef DEBUG
 #define apollo_printf dbg_printf 
 #else
 #define apollo_printf printf
 #endif
 
+#define DISTRBUTE_SAVE	1
+#define DISK_FILE_SAVE	2
+
+#define DATA_SAVE_TYPE 	DISTRBUTE_SAVE
+
+#define ENABLE_FALLDOWN_HTTPPOST	1
 
 #endif
 

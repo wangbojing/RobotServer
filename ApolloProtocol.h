@@ -54,6 +54,8 @@
 #define LEN_COMMAND_PACKET			16
 #define LEN_DEVICE_DOWNLOAD			16
 
+#define LEN_DEVICE_INFO				12
+
 #define LEN_LONGITUDE_DATA			5
 #define LEN_LATITUDE_DATA			5
 

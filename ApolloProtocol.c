@@ -72,6 +72,7 @@ int deviceHeartPacket(char *packet, int length, char* info) {
 	char u8RelationShipDevice[LEN_DEVICE_ID*2+6] = {0};
 	char u8RedisUserValue[REDIS_COMMAND_LENGTH] = {0};
 	char u8RedisDeviceInfo[REDIS_COMMAND_LENGTH] = {0};
+	char u8DeviceInfo[REDIS_COMMAND_LENGTH] = {0};
 
 	if(length != LEN_HEART_PACKET_DEVICE) {
 		return -3;
@@ -86,8 +87,21 @@ int deviceHeartPacket(char *packet, int length, char* info) {
 		return -1;
 	}
 	apollo_printf(" timeDiff: %d\n", *(int*)(packet+24));
+	
+#if ENABLE_FALLDOWN_HTTPPOST
+	if((*(packet+10) & 0x0F)) {
+		extern void *http_device_falldown(void *data);
+		pthread_t tid = -1;
+		int err = pthread_create(&tid, NULL, http_device_falldown, (void *)packet);
+		if(0 != err)
+			fprintf(stderr, "Couldn't run thread numbe, errno %d\n", err);
+		else
+			fprintf(stderr, "Thread\n");
+	}
+#endif
 	//set device info {device->User: 1->1}
-	sprintf(u8RedisDeviceInfo, "I_%d_%ld", *(packet+IDX_DEVICE_POWER), *((long*)(packet+IDX_DEVICE_HEARTPACKET_TIMESTAMP)));
+	hextostring(u8DeviceInfo, packet+IDX_DEVICE_POWER, LEN_DEVICE_INFO);
+	sprintf(u8RedisDeviceInfo, "I_%s_%d", u8DeviceInfo, *((int*)(packet+IDX_DEVICE_HEARTPACKET_TIMESTAMP)));
 	apollo_printf(" u8RedisDeviceInfo:%s, u8RedisUserValue:%s\n", u8RedisDeviceInfo, u8RedisUserValue);
 	if (-1 == set_key_toredis(u8RedisUserValue, u8RedisDeviceInfo)) {
 		return -2;
