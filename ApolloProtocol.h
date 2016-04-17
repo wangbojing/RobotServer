@@ -171,6 +171,15 @@ typedef struct LOCINFO {
 	char u8UbloxFlag;
 } LocationInfo;
 
+enum {
+	MULTICAST_TYPE_BLOCK = 0x31,
+	MULTICAST_TYPE_AGPS = 0x32,
+} MULTICAST_DATA_TYPE;
+
+typedef struct MULTICAST {
+	char u8DeviceId[LEN_DEVICE_ID*2+2];
+	char u8flag;
+} MulticastSynerPacket;
 
 static struct ApolloProtocolProcess *ApolloProtocolInstance = NULL;
 

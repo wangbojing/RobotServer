@@ -176,7 +176,7 @@ int takeDataPacket(const char *filename,unsigned char *data, char *packet) {
 	};
 
 	for (i = 0;i < LEN_DEVICE_ID;i ++) {
-		header[i+1] = packet[i+1];
+		header[i+1] = packet[i];
 	}
 
 	if (size % LEN_BLOCK_DATA) {
@@ -218,6 +218,15 @@ int takeDataPacket(const char *filename,unsigned char *data, char *packet) {
 
 	return index;
 }
+
+int takeDataPacketFlag(unsigned char *data, int length, char flag) {
+	int i = 0;
+	while (i*LEN_BLOCK_PACKET < length) {
+		data[i*LEN_BLOCK_PACKET + 20] = flag;
+		i ++;
+	}
+}
+
 
 int Separation(char ch, char *sequence, char ***pChTable, int *Count) {
 	int i = 0, j = 0;
@@ -282,4 +291,15 @@ int apollo_atoi(char* pstr)
     return Ret_Integer;  
 }  
 
+
+char apollo_strcmp(char *str1, char *str2, int str1len) {
+	int i = 0;
+
+	for (i = 0;i < str1len;i ++) {
+		if (*str1 != *str2) return 0;
+		str1 ++;
+		str2 ++;
+	}
+	return 1;
+}
 

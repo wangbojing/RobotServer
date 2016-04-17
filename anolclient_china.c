@@ -117,6 +117,8 @@
 #include "ubx.h"
 #include "ApolloUtil.h"
 #include "ApolloProtocol.h"
+#include "ApolloSyner.h"
+
 
 #define BUFFER_SIZE 8192	//!< Size of the temporary buffers
 #define MAXFIELDLEN 128     //!< Maximum length for username and password
@@ -488,6 +490,7 @@ void* ubloxDownloadApgs(void* arg)
 	LocationInfo *locationInfo = (LocationInfo*)arg;
 	I	 gpsDes = -1;  // File description to GPS device
 	CH u8Cmd[12] = {0};
+	MulticastSynerPacket *pSynPacket = NULL;
 
 	req.lat = atof(locationInfo->u8Latitude+1);
 	req.lon = atof(locationInfo->u8Longitude+1);
@@ -549,6 +552,13 @@ void* ubloxDownloadApgs(void* arg)
 	if (-1 == set_key_toredis(locationInfo->u8DeviceId, u8Cmd)) {
 		return NULL;
 	}
+	
+	//multicast
+	pSynPacket = (MulticastSynerPacket*)malloc(sizeof(MulticastSynerPacket));
+	memset(pSynPacket, 0, sizeof(MulticastSynerPacket));
+	strcpy(pSynPacket->u8DeviceId, locationInfo->u8DeviceId);
+	pSynPacket->u8flag = MULTICAST_TYPE_AGPS;
+	StartApolloSynerAction((void*)pSynPacket);
 	
 	free(locationInfo);
 	return NULL;

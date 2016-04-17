@@ -1,6 +1,6 @@
 /**
  * To compile: gcc -o echoserver_threaded echoserver_threaded.c workqueue.c -levent -lpthread
- * gcc -o RobotServer ApolloProtocol.c ApolloSqlOperator.c ApolloRedis.c ApolloUtil.c server.c workqueue.c anolclient_china.c curljson.c -levent -lpthread -lmysqlclient -lzdb -lhiredis -lcurl  -I /usr/include/mysql/
+ *  gcc -o RobotServer ApolloProtocol.c ApolloSqlOperator.c ApolloRedis.c ApolloUtil.c server.c workqueue.c anolclient_china.c curljson.c ApolloSyner.c  -levent -lpthread -lmysqlclient -lzdb -lhiredis -lcurl  -I /usr/include/mysql/
  * To run: ./RobotServer
  */
 
@@ -22,6 +22,7 @@
 #include "ApolloProtocol.h"
 #include "ApolloUtil.h"
 #include "ApolloSqlOperator.h"
+#include "ApolloSyner.h"
 
 /* Port to listen on. */
 #define SERVER_PORT 8880
@@ -367,6 +368,10 @@ int main(int argc, char *argv[]) {
 	
 	initUserInfoList();
 	initUserAndDeviceRelationshipList();
+
+#if ENABLE_MULTICAST_DATA_SYN
+	StartApolloSyner();
+#endif
 
 	return runServer();
 }

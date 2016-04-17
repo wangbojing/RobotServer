@@ -23,9 +23,12 @@ void genBlockFilePathName(char *filename, char *pathname);
 void genAgpsFilePathName(char *filename, char *pathname);
 
 int takeDataPacket(const char *filename,unsigned char *data, char *packet);
+int takeDataPacketFlag(unsigned char *data, int length, char flag);
 
 int Separation(char ch, char *sequence, char ***pChTable, int *Count);
 int apollo_atoi(char* pstr) ;
+char apollo_strcmp(char *str1, char *str2, int str1len);
+
 void writeTimeHeader(CH *buf);
 
 
@@ -44,6 +47,7 @@ void writeTimeHeader(CH *buf);
 #define DATA_SAVE_TYPE 	DISTRBUTE_SAVE
 
 #define ENABLE_FALLDOWN_HTTPPOST	1
+#define ENABLE_MULTICAST_DATA_SYN	1
 
 #endif
 

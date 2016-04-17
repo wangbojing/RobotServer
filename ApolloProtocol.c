@@ -12,6 +12,7 @@
 #include "ApolloRedis.h"
 #include "ApolloProtocol.h"
 #include "ApolloSqlOperator.h"
+#include "ApolloSyner.h"
 
 
 int checkPhoneCommand(unsigned char Cmd) {
@@ -245,8 +246,8 @@ int phoneCommandPacket(char *packet, int length) {
 }
 
 /*
- * 47 20 16 01 05 00 00 00 07 01 11 30 91 27 16 02 20 64 64 26 03 45 65 23 00 34 32 25 25 25 25 25
- * 47 20 16 01 05 00 00 00 07 02 12 30 56 65 23 03 43 56 32 67 03 45 65 23 00 34 32 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25
+ * 47 20 16 01 05 00 00 00 07 11 11 30 91 27 16 02 20 64 64 26 03 45 65 23 00 34 32 25 25 25 25 25
+ * 47 20 16 01 05 00 00 00 07 12 12 30 56 65 23 03 43 56 32 67 03 45 65 23 00 34 32 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25
  */
 extern void* ubloxDownloadApgs(void* arg);
 
@@ -494,7 +495,7 @@ int deviceBlockDataSendPacket(struct bufferevent *bev, client_t *client, char *p
 		genBlockFilePathName(u8DeviceId, u8FileName);
 		apollo_printf("block FileName:%s\n", u8FileName);
 	}
-	totalLength = takeDataPacket(u8FileName, client->pBlock->buffer, packet);
+	totalLength = takeDataPacket(u8FileName, client->pBlock->buffer, packet+1);
 	apollo_printf("totalLength:%d\n", totalLength);
 	while (sendLength < totalLength) {
 		if ((totalLength - sendLength) >= LEN_BLOCK_PACKET) {
@@ -622,7 +623,8 @@ void apolloParsePacket(struct bufferevent *bev, client_t *client) {
 				int pktTotal = data[29];
 				char u8DeviceId[LEN_DEVICE_ID*2+1];
 				char u8FileName[LEN_DEVICE_ID*4];
-				char retbuf[LEN_DEVICE_RETURN_BUFFER] = {'S', 'E', 'T', 'O', 'K', '%'};
+				char retbuf[LEN_DEVICE_RETURN_BUFFER] = {'S', 'E', 'T', 'O', 'K', '%'};				
+				MulticastSynerPacket *pSynPacket = NULL;
 				//ApolloProtocolInstance->deviceBlockDataRecvPacket_Proc(client, data, nbytes);
 
 				apollo_printf("pkt_13:%d, pkt_29:%d, pkt_30:%d, pkt_31:%d\n", data[13], data[29], data[30], (unsigned char)data[31]);
@@ -656,7 +658,13 @@ void apolloParsePacket(struct bufferevent *bev, client_t *client) {
 					//return data to device
 					apolloReturnPacket(bev, client, retbuf, LEN_DEVICE_RETURN_BUFFER);	
 					//set redis key
-					
+
+					//multicast
+					pSynPacket = (MulticastSynerPacket*)malloc(sizeof(MulticastSynerPacket));
+					memset(pSynPacket, 0, sizeof(MulticastSynerPacket));
+					strcpy(pSynPacket->u8DeviceId, u8DeviceId);
+					pSynPacket->u8flag = MULTICAST_TYPE_AGPS;
+					StartApolloSynerAction((void*)pSynPacket);
 				}
 				//printf("bbbb index:%d\n", client->pBlock->index);
 				break;

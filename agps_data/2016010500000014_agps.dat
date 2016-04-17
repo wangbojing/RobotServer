@@ -1,0 +1,23 @@
+
+以Key 
+DeviceId : 2016010500000001
+UserId: 12
+
+<Key, Value>
+1、通过DeviceId获取到用户ID：<R_{DeviceId}, UserId>		<R_2016010500000001, 12>
+2、通过UserId设置实时数据：
+<UserId, I_{电量信号跌倒信号（此部分按照协议1.6 心跳包描述{9-16字节}的数据格式转换为String）}_{时间戳}>
+<12, I_06010000001232_12343243>
+3、通过设置DeviceId来设置控制命令（控制命令细节见协议1.6的命令控制）：
+<DeviceId, CMD>		<2016010500000001, 61>,
+4、通过UserId获取DeviceId：<RP_{UserId}, DeviceId>	<RP_12, 2016010500000001>
+5、通过设置亲情号码通讯录等信息，设置命令参考协议1.6
+		<DeviceId, CMD_{index}_{PhoneNumber}>		<2016010500000001, CMD_1_008618874187429>
+6、设置GPS定位频率
+		<DeviceId, CMD_{index}> <2016010500000001, CMD_1>
+7、GPS定位, lng:经度,lat:纬度,high:高度,type:lab/gps, timeStamp时间戳
+		<DeviceId, G_{lng}_{lat}_{high}_{type}_{timeStamp}>
+		<2016010500000001, G_E113.23456_N023.456323_0_123456>
+	
+
+
