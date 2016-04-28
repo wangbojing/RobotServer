@@ -177,7 +177,7 @@ int phoneHeaderPacket(char *packet, int length, char *info) {
 	//printf("PhoneId:%s", PhoneId);
 	get_value_fromredis(PhoneId, info);
 
-	del_redis_key(PhoneId);
+	//del_redis_key(PhoneId);
 
 	return strlen(info);
 }
@@ -193,7 +193,7 @@ int phoneHeaderPacket(char *packet, int length, char *info) {
  * 43 00 00 00 07 0A 00 86 18 87 41 87 42 90 43 01//single cmd open 
  * 43 00 00 00 07 0B 00 86 18 87 41 87 42 90 43 01//single cmd open 
  * 43 00 00 00 07 03 00 86 18 87 41 87 42 90 43 01//single cmd open 
- * 43 00 00 00 07 05 00 86 18 87 41 87 42 90 43 01//single cmd open 
+ * 43 00 00 00 06 44 02 86 18 87 41 87 42 90 43 01//single cmd open 
  */
 int phoneCommandPacket(char *packet, int length) {
 	char u8PhoneId[LEN_PHONE_ID*2+1] = {0};
@@ -246,7 +246,7 @@ int phoneCommandPacket(char *packet, int length) {
 }
 
 /*
- * 47 20 16 01 05 00 00 00 07 11 11 30 91 27 16 02 20 64 64 26 03 45 65 23 00 34 32 25 25 25 25 25
+ * 47 20 16 01 05 00 00 00 07 01 11 30 91 27 16 02 20 64 64 26 03 45 65 23 00 34 32 25 25 25 25 25
  * 47 20 16 01 05 00 00 00 07 12 12 30 56 65 23 03 43 56 32 67 03 45 65 23 00 34 32 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25 25
  */
 extern void* ubloxDownloadApgs(void* arg);
@@ -621,8 +621,8 @@ void apolloParsePacket(struct bufferevent *bev, client_t *client) {
 				int dataLength = data[30] * 256 + (unsigned char)data[31];
 				int pktIndex = data[13];
 				int pktTotal = data[29];
-				char u8DeviceId[LEN_DEVICE_ID*2+1];
-				char u8FileName[LEN_DEVICE_ID*4];
+				char u8DeviceId[LEN_DEVICE_ID*2+1] = {0};
+				char u8FileName[LEN_DEVICE_ID*4] = {0};
 				char retbuf[LEN_DEVICE_RETURN_BUFFER] = {'S', 'E', 'T', 'O', 'K', '%'};				
 				MulticastSynerPacket *pSynPacket = NULL;
 				//ApolloProtocolInstance->deviceBlockDataRecvPacket_Proc(client, data, nbytes);
@@ -662,7 +662,8 @@ void apolloParsePacket(struct bufferevent *bev, client_t *client) {
 					//multicast
 					pSynPacket = (MulticastSynerPacket*)malloc(sizeof(MulticastSynerPacket));
 					memset(pSynPacket, 0, sizeof(MulticastSynerPacket));
-					strcpy(pSynPacket->u8DeviceId, u8DeviceId);
+					memcpy(pSynPacket->u8DeviceId, u8DeviceId, LEN_DEVICE_ID*2);
+					pSynPacket->u8DeviceId[LEN_DEVICE_ID*2] = 0x0;
 					pSynPacket->u8flag = MULTICAST_TYPE_AGPS;
 					StartApolloSynerAction((void*)pSynPacket);
 				}

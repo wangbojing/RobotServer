@@ -485,7 +485,7 @@ void* ubloxDownloadApgs(void* arg)
 	CH cmdShell[MAXFIELDLEN] = {0};
 	CH   connectTo[MAXFIELDLEN] = "agps.u-blox.com:46434";
 	I    i; 
-	REQ_t req = { "wangbojing1989@foxmail.com", "Iusrpo", 23.0744,113.14028,0,1500e3}; //<
+	REQ_t req = { "wangbojing1989@foxmail.com", "Iusrpo", 23.0744,113.14028,0,1500000}; //<
 	I    count=1, size;  // Just to count the number of restarts - and to cycle between different aiding modes and protocols
 	LocationInfo *locationInfo = (LocationInfo*)arg;
 	I	 gpsDes = -1;  // File description to GPS device
